@@ -40,23 +40,20 @@ def get_messages(service):
     msgs = []
     try:
         # Call the Gmail API
-        result = service.users().messages().list(userId="me").execute()
-        messages = result.get('messages', [])
+        result = service.users().messages().list(userId="me", q='').execute()
+        messages = []
+        if 'messages' in result:
+            messages.extend(result['messages'])
 
-        # while 'nextPageToken' in result:
-        #     page_token = result['nextPageToken']
-        #     result = service.users().messages().list(
-        #         userId="me", pageToken=page_token).execute()
-        #     messages.extend(result.get('messages', []))
-        #     print(f'Recieved page {page_token}')
-        if not messages:
-            print('No messages found.')
-        else:
+        while 'nextPageToken' in result:
+            page_token = result['nextPageToken']
+            result = service.users().messages().list(userId="me", q='', pageToken=page_token).execute()
+            messages.extend(result['messages'])
+            print(f'Recieved page {page_token}')
+        if messages:
             for message in messages:
-                msg = service.users().messages().get(
-                    userId='me', id=message['id']).execute()
+                msg = service.users().messages().get(userId='me', id=message['id']).execute()
                 msgs.append(msg)
-                # print(f"Message snippet: {msg['payload'].get('parts', [])}")
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
         print(f"An error occurred: {error}")
